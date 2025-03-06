@@ -6,6 +6,7 @@ services:       # 이 항목 밑에 실행하려는 컨테이너 들을 정의
     volumes:
       - ./prometheus/config:/etc/prometheus
       - ./prometheus/volume:/prometheus
+      #- prometheus_data:/prometheus
     ports:
       - 9090:9090 # 접근 포트 설정 (컨테이너 외부:컨테이너 내부)
     command: # web.enalbe-lifecycle은 api 재시작없이 설정파일들을 reload 할 수 있게 해줌
@@ -22,11 +23,33 @@ services:       # 이 항목 밑에 실행하려는 컨테이너 들을 정의
     ports:
       - 3000:3000 # 접근 포트 설정 (컨테이너 외부:컨테이너 내부)
     volumes:
-      - ./grafana/volume:/var/lib/grafana
+      - ./grafana/volume:/var/lib/grafana #디렉터리에 저장
+      #- grafana_data:/var/lib/grafana #볼륨 생성
     restart: always
+    networks:
+      - promnet
+  
+  node_exporter:
+    image: prom/node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
     networks:
       - promnet
 
 networks:
   promnet:
     driver: bridge
+
+
+volumes:
+  prometheus_data:
+  grafana_data:
